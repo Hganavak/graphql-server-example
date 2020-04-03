@@ -28,7 +28,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/index-auth.js"
+            "program": "${workspaceFolder}/chirp.js"
         }
     ]
 }

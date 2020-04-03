@@ -100,16 +100,17 @@ getRemoteSchema = async(remoteUri) => {
 initialize = async () => {
 
     // Load remote schemas here
-    spacexSchema = await getRemoteSchema('https://api.spacex.land/graphql');
+    // spacexSchema = await getRemoteSchema('https://api.spacex.land/graphql');
     countriesSchema = await getRemoteSchema('https://countries.trevorblades.com/');
 
     // Merge all schemas (remote and local) here
     const schema = mergeSchemas({
         schemas: [
-            spacexSchema,
+            // spacexSchema,
             countriesSchema,
             localSchema
-        ]
+        ],
+        mergeDirectives: true
     });
 
     const server = new ApolloServer({ 
