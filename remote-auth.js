@@ -110,7 +110,38 @@ initialize = async () => {
             countriesSchema,
             localSchema
         ],
-        mergeDirectives: true
+        mergeDirectives: true,
+        resolvers: [
+                custom => { return { Query: {
+                    countries: (root, args, context, info) => {
+                        console.log(context)
+                        if(context.user) {
+                            return info.mergeInfo.delegateToSchema({
+                                schema: countriesSchema,
+                                operation: 'query',
+                                fieldName: 'countries',
+                                args,
+                                context,
+                                info
+                            });
+                        } else {
+                            console.log('not auth')
+                            return info.mergeInfo.delegateToSchema({
+                                schema: countriesSchema,
+                                operation: 'query',
+                                fieldName: 'countries',
+                                args: {
+                                    filter: {code: {eq: "AZ" }}
+                                }, 
+                                context,
+                                info
+                            });
+                        }
+                    }
+                }
+            }
+            }
+        ]
     });
 
     const server = new ApolloServer({ 
@@ -119,7 +150,7 @@ initialize = async () => {
             user = { upi: 'skav012' }; // Get session here
             user = null;
             return  { user };
-        }
+        },
     });
 
     // The 'listen' method launches a web server.
