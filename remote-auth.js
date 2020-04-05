@@ -3,9 +3,13 @@ const { introspectSchema, makeExecutableSchema, makeRemoteExecutableSchema, merg
 const { HttpLink } = require('apollo-link-http');
 const fetch = require('node-fetch');
 
+// Contentful settings
+const CONTENTFUL_ACCESS_TOKEN='9d5de88248563ebc0d2ad688d0473f56fcd31c600e419d6c8962f6aed0150599';
+const CONTENTFUL_SPACE_ID='f8bqpb154z8p';
+
 // Set up remote schemas
 // Load a remote schema and set up the http-link
-getRemoteSchema = async(remoteUri, headers) => {
+getRemoteSchema = async(remoteUri) => {
     try {
         console.log('Loading remote schema:', remoteUri)
         const link = new HttpLink({ uri: remoteUri, fetch });
@@ -25,54 +29,49 @@ getRemoteSchema = async(remoteUri, headers) => {
 initialize = async () => {
 
     // Load remote schemas here
-    countriesSchema = await getRemoteSchema('https://countries.trevorblades.com/');
+    contentfulSchema = await getRemoteSchema(`https://graphql.contentful.com/content/v1/spaces/${CONTENTFUL_SPACE_ID}?access_token=${CONTENTFUL_ACCESS_TOKEN}`);
 
     // Merge all schemas (remote and local) here
     const schema = mergeSchemas({
         schemas: [
-            countriesSchema,
+            contentfulSchema
         ],
-        mergeDirectives: true,
-        resolvers: [
-                custom => { return { Query: {
-                    countries: (root, args, context, info) => {
-
-                        // If the user is signed in, simply forward request
-                        if(context.user) {
-                            return info.mergeInfo.delegateToSchema({
-                                schema: countriesSchema,
-                                operation: 'query',
-                                fieldName: 'countries',
-                                args,
-                                context,
-                                info
-                            });
-                        } 
-
-                        // If the user is not signed, forward request with additional filtering arguments
-                        else {
-                            return info.mergeInfo.delegateToSchema({
-                                schema: countriesSchema,
-                                operation: 'query',
-                                fieldName: 'countries',
-                                args: {
-                                    filter: {code: {eq: "AZ" }}
-                                }, 
-                                context,
-                                info
-                            });
-                        }
-                    }
+        resolvers: [{
+            Query: {
+                lessonCollection: (root, args, context, info) => {
+                    if(context.user) { // If the user is signed in, simply forward request
+                        return info.mergeInfo.delegateToSchema({
+                            schema: contentfulSchema,
+                            operation: 'query',
+                            fieldName: 'lessonCollection',
+                            args,
+                            context,
+                            info
+                        });
+                    } else { // If the user is not signed, forward request with additional filtering arguments
+                        console.log('user not authd')
+                        return info.mergeInfo.delegateToSchema({
+                            schema: contentfulSchema,
+                            operation: 'query',
+                            fieldName: 'lessonCollection',
+                            args: {
+                                where: {
+                                    enabled: true
+                                }
+                            },
+                            context,
+                            info
+                        });
+                    } 
                 }
             }
-            }
-        ]
+        }]
     });
 
     const server = new ApolloServer({ 
         schema,
         context: ({ req }) => {
-            user = { upi: 'skav012' }; // Get session here
+            // user = { upi: 'skav012' }; // Get session here
             user = null;
             return  { user };
         },
