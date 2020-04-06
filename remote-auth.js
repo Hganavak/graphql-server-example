@@ -3,9 +3,13 @@ const { introspectSchema, makeExecutableSchema, makeRemoteExecutableSchema, merg
 const { HttpLink } = require('apollo-link-http');
 const fetch = require('node-fetch');
 
+// Measure server startup time
+var startTime = new Date().getTime();
+
 // Contentful settings
 const CONTENTFUL_ACCESS_TOKEN='9d5de88248563ebc0d2ad688d0473f56fcd31c600e419d6c8962f6aed0150599';
 const CONTENTFUL_SPACE_ID='f8bqpb154z8p';
+
 
 // Set up remote schemas
 // Load a remote schema and set up the http-link
@@ -15,7 +19,7 @@ getRemoteSchema = async(remoteUri) => {
         const link = new HttpLink({ uri: remoteUri, fetch });
         const schema = await introspectSchema(link);
 
-        console.log('Loaded remote schema:', remoteUri)
+        console.log('Remote schema loaded successfully.')
         return makeRemoteExecutableSchema({
             schema,
             link,
@@ -79,9 +83,8 @@ initialize = async () => {
 
     // The 'listen' method launches a web server.
     server.listen().then(({ url }) => {
-        console.log(`🚀  Server ready at ${url}`);
+        console.log(`🚀  Server ready at ${url}. Server started in: ${new Date().getTime() - startTime}ms.`);
     });
-
 
 }
 
